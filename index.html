@@ -2,7 +2,7 @@
 <html>
 <body>
 
-<button id="btnConnect">Connect</button>
+<button id="btnConnectS3">Connect Shimmer3</button>
 
 <script type="module">
   import {
@@ -22,17 +22,22 @@
 
   client.onStatus = (msg) => console.log('[status]', msg);
 
+//   client.onStreamFrame = (oc) => {
+//     const gz = oc.get('GYRO_Z', 'raw')?.value;
+//     console.log('GYRO_Z =', gz);
+//   };
+
   client.onStreamFrame = (oc) => {
-    const gz = oc.get('GYRO_Z', 'raw')?.value;
-    console.log('GYRO_Z =', gz);
+    console.log(oc);
   };
 
-  document.getElementById('btnConnect').addEventListener('click', async () => {
+  document.getElementById('btnConnectS3').addEventListener('click', async () => {
     await client.connect();
     await client.setSamplingRate(51.2);
     await client.setSensors(
       SensorBitmapShimmer3.SENSOR_GYRO |
-      SensorBitmapShimmer3.SENSOR_A_ACCEL
+      SensorBitmapShimmer3.SENSOR_A_ACCEL |
+      SensorBitmapShimmer3.SENSOR_GSR
     );
     await client.startStreaming();
   });
