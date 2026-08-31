@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<button id="btnConnect">Connect</button>
+
+<script type="module">
+  import {
+    Shimmer3Client,
+    WebSerialTransport,
+    SensorBitmapShimmer3,
+    SHIMMER3_SPP_UUID,
+  } from './dist/shimmer-web-sdk.esm.js';
+
+  const client = new Shimmer3Client({
+    transport: new WebSerialTransport({
+      filters: [{ bluetoothServiceClassId: SHIMMER3_SPP_UUID }],
+      allowedBluetoothServiceClassIds: [SHIMMER3_SPP_UUID],
+      kind: 'rfcomm',
+    }),
+  });
+
+  client.onStatus = (msg) => console.log('[status]', msg);
+
+  client.onStreamFrame = (oc) => {
+    const gz = oc.get('GYRO_Z', 'raw')?.value;
+    console.log('GYRO_Z =', gz);
+  };
+
+  document.getElementById('btnConnect').addEventListener('click', async () => {
+    await client.connect();
+    await client.setSamplingRate(51.2);
+    await client.setSensors(
+      SensorBitmapShimmer3.SENSOR_GYRO |
+      SensorBitmapShimmer3.SENSOR_A_ACCEL
+    );
+    await client.startStreaming();
+  });
+</script>
+
+</body>
+</html>
