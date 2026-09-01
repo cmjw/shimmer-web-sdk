@@ -30,34 +30,41 @@
 
   let data = [];
 
-  client.onStreamFrame = (oc) => {
-    //console.log(oc);
-    const timestamp = oc.get('TIMESTAMP', 'raw')?.value;
-    const gx = oc.get('GYRO_X', 'raw')?.value;
-    const gy = oc.get('GYRO_Y', 'raw')?.value;
-    const gz = oc.get('GYRO_Z', 'raw')?.value;
-    // const gsr = oc.fields.find(
-    //     f => f.name === 'GSR' && f.kind === 'cal'
-    // )?.value;
+  // oc values
+  // 
 
-    //console.log(timestamp, gx, gy, gz)
-    data.push([timestamp, gx, gy, gz]);
+  client.onStreamFrame = (oc) => {
+    console.log(oc);
+    const timestamp = oc.get('TIMESTAMP', 'raw')?.value;
+    const gx        = oc.get('GYRO_X', 'raw')?.value;
+    const gy        = oc.get('GYRO_Y', 'raw')?.value;
+    const gz        = oc.get('GYRO_Z', 'raw')?.value;
+    const batt      = oc.get('CH_03', 'raw')?.value;
+    const gsr_raw   = oc.fields.find(
+      f => f.name === 'GSR' && f.kind === 'raw'
+    )?.value; // raw GSR
+    const gsr_cal   = oc.fields.find(
+      f => f.name === 'GSR' && f.kind === 'cal'
+    )?.value; // GSR in microSiemens
+
+    data.push([timestamp, gx, gy, gz, batt, gsr_raw, gsr_cal]);
   };
 
   document.getElementById('btnConnectS3').addEventListener('click', async () => {
     await client.connect();
     await client.setSamplingRate(51.2);
-    await client.setSensors(
+    await client.setSensors( // enable sensors
       SensorBitmapShimmer3.SENSOR_GYRO |
       SensorBitmapShimmer3.SENSOR_A_ACCEL |
-      SensorBitmapShimmer3.SENSOR_GSR
+      SensorBitmapShimmer3.SENSOR_GSR |
+      SensorBitmapShimmer3.SENSOR_VBATT
     );
     await client.startStreaming();
   });
 
   document.getElementById('btnSave').addEventListener('click', () => {
     const csv = [
-        'timestamp,GYRO_X,GYRO_Y,GYRO_Z',
+        'timestamp,GYRO_X,GYRO_Y,GYRO_Z,BATT,GSR_RAW,GSR_CAL',
         ...data.map(row => row.join(','))
     ].join('\r\n');
 
