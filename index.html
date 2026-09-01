@@ -3,6 +3,7 @@
 <body>
 
 <button id="btnConnectS3">Connect Shimmer3</button>
+<button id="btnSave">Save CSV</button>
 
 <script type="module">
   import {
@@ -27,8 +28,20 @@
 //     console.log('GYRO_Z =', gz);
 //   };
 
+  let data = [];
+
   client.onStreamFrame = (oc) => {
-    console.log(oc);
+    //console.log(oc);
+    const timestamp = oc.get('TIMESTAMP', 'raw')?.value;
+    const gx = oc.get('GYRO_X', 'raw')?.value;
+    const gy = oc.get('GYRO_Y', 'raw')?.value;
+    const gz = oc.get('GYRO_Z', 'raw')?.value;
+    // const gsr = oc.fields.find(
+    //     f => f.name === 'GSR' && f.kind === 'cal'
+    // )?.value;
+
+    //console.log(timestamp, gx, gy, gz)
+    data.push([timestamp, gx, gy, gz]);
   };
 
   document.getElementById('btnConnectS3').addEventListener('click', async () => {
@@ -41,6 +54,31 @@
     );
     await client.startStreaming();
   });
+
+  document.getElementById('btnSave').addEventListener('click', () => {
+    const csv = [
+        'timestamp,GYRO_X,GYRO_Y,GYRO_Z',
+        ...data.map(row => row.join(','))
+    ].join('\r\n');
+
+    console.log("CSV FILE");
+    console.log(csv);
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shimmer_${Date.now()}.csv`;
+
+    document.body.appendChild(a);
+    a.click();
+
+    setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+    }, 1000);
+});
 </script>
 
 </body>
