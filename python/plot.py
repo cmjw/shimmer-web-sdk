@@ -9,6 +9,7 @@ from collections import deque
 from PySide6.QtWidgets import QApplication
 
 MAX_POINTS = 2000
+SHIMMER_SAMPLE_RATE = 32768.0
 
 timestamps = deque(maxlen=MAX_POINTS)
 gsr = deque(maxlen=MAX_POINTS)
@@ -24,15 +25,13 @@ async def websocket_client():
             try:
                 data = json.loads(message)
 
-                if data.get("device") != "shimmer3":
-                    continue
+                if data.get("device") == "shimmer3":
+                    with data_lock:
+                        timestamps.append(data["timestamp"]) # will need to change for multiple devices.
+                        # need to synchronize with each other, as well as in real time.
+                        # shimmer timestamps in ticks
 
-                with data_lock:
-                    timestamps.append(data["timestamp"]) # will need to change for multiple devices.
-                    # need to synchronize with each other, as well as in real time.
-                    # shimmer timestamps in ticks
-
-                    gsr.append(data["gsr_cal"])
+                        gsr.append(data["gsr_cal"])
 
             except Exception as e:
                 print("[ERROR] ", repr(e))
@@ -59,7 +58,7 @@ def update():
 
     t0 = t[0]
     #t = [x - t0 for x in t]
-    t = [(x - t0) / 32768.0 for x in t] # convert ticks to s
+    t = [(x - t0) / SHIMMER_SAMPLE_RATE for x in t] # convert ticks to s
 
     curve.setData(t, y)
 
