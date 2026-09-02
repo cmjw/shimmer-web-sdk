@@ -21,17 +21,19 @@
     }),
   });
 
+  // Python websocket for data analysis
+  const socket = new WebSocket('ws://localhost:8765');
+  socket.onopen = () => {
+    console.log('Connected to Python websocket');
+  };
+  socket.onerror = (err) => {
+    console.error('Websocket error: ', err);
+  };
+  
+
   client.onStatus = (msg) => console.log('[status]', msg);
 
-//   client.onStreamFrame = (oc) => {
-//     const gz = oc.get('GYRO_Z', 'raw')?.value;
-//     console.log('GYRO_Z =', gz);
-//   };
-
   let data = [];
-
-  // oc values
-  // 
 
   client.onStreamFrame = (oc) => {
     console.log(oc);
@@ -48,6 +50,16 @@
     )?.value; // GSR in microSiemens
 
     data.push([timestamp, gx, gy, gz, batt, gsr_raw, gsr_cal]);
+
+    // test send to python websocket
+    socket.send(JSON.stringify({
+      device: 'shimmer3',
+      timestamp: timestamp,
+      gyro_x: gx,
+      gyro_y: gy,
+      gyro_z: gz,
+      gsr_cal: gsr_cal
+    }));
   };
 
   document.getElementById('btnConnectS3').addEventListener('click', async () => {
