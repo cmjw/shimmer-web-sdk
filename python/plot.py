@@ -42,11 +42,11 @@ def run_websocket():
 app = QApplication([])
 
 # plot in real time
-plot = pg.plot(title="Shimmer3 GSR+ Data")
-plot.setLabel("left", "GSR")
-plot.setLabel("bottom", "Time", "s")
+plotWidget = pg.plot(title="Shimmer3 GSR+ Data")
+plotWidget.setLabel("left", "GSR")
+plotWidget.setLabel("bottom", "Time", "s")
 
-curve = plot.plot()
+curve = plotWidget.plot()
 
 def update():
     with data_lock:
