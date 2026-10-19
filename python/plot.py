@@ -25,7 +25,7 @@ async def websocket_client():
             try:
                 data = json.loads(message)
 
-                if data.get("device") == "shimmer3":
+                if data.get("device") == "shimmer3r":
                     with data_lock:
                         timestamps.append(data["timestamp"]) # will need to change for multiple devices.
                         # need to synchronize with each other, as well as in real time.
