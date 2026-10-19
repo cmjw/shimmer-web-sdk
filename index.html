@@ -2,24 +2,13 @@
 <html>
 <body>
 
-<button id="btnConnectS3">Connect Shimmer3</button>
+<button id="btnConnect">Connect Shimmer 3R GSR+</button>
 <button id="btnSave">Save CSV</button>
 
 <script type="module">
-  import {
-    Shimmer3Client,
-    WebSerialTransport,
-    SensorBitmapShimmer3,
-    SHIMMER3_SPP_UUID,
-  } from './dist/shimmer-web-sdk.esm.js';
+  import { Shimmer3RClient, SensorBitmapShimmer3 } from './dist/shimmer-web-sdk.esm.js';
 
-  const client = new Shimmer3Client({
-    transport: new WebSerialTransport({
-      filters: [{ bluetoothServiceClassId: SHIMMER3_SPP_UUID }],
-      allowedBluetoothServiceClassIds: [SHIMMER3_SPP_UUID],
-      kind: 'rfcomm',
-    }),
-  });
+  const client = new Shimmer3RClient({ timestampFmt: 'u24', debug: true });
 
   // Python websocket for data analysis
   const socket = new WebSocket('ws://localhost:8765');
@@ -29,11 +18,11 @@
   socket.onerror = (err) => {
     console.error('Websocket error: ', err);
   };
-  
 
+  // Client response on status
   client.onStatus = (msg) => console.log('[status]', msg);
 
-  let data = [];
+  let data = []; // log data
 
   client.onStreamFrame = (oc) => {
     console.log(oc);
@@ -51,9 +40,9 @@
 
     data.push([timestamp, gx, gy, gz, batt, gsr_raw, gsr_cal]);
 
-    // test send to python websocket
+    // send to python websocket
     socket.send(JSON.stringify({
-      device: 'shimmer3',
+      device: 'shimmer3r',
       timestamp: timestamp,
       gyro_x: gx,
       gyro_y: gy,
@@ -62,42 +51,44 @@
     }));
   };
 
-  document.getElementById('btnConnectS3').addEventListener('click', async () => {
+  // Connect to Shimmer upon button press
+  document.getElementById('btnConnect').addEventListener('click', async () => {
     await client.connect();
     await client.setSamplingRate(51.2);
     await client.setSensors( // enable sensors
       SensorBitmapShimmer3.SENSOR_GYRO |
       SensorBitmapShimmer3.SENSOR_A_ACCEL |
       SensorBitmapShimmer3.SENSOR_GSR |
-      SensorBitmapShimmer3.SENSOR_VBATT
-    );
+      SensorBitmapShimmer3.SENSOR_VBATT);
     await client.startStreaming();
   });
 
+  // Save data to CSV
   document.getElementById('btnSave').addEventListener('click', () => {
-    const csv = [
-        'timestamp,GYRO_X,GYRO_Y,GYRO_Z,BATT,GSR_RAW,GSR_CAL',
-        ...data.map(row => row.join(','))
-    ].join('\r\n');
+      const csv = [
+          'timestamp,GYRO_X,GYRO_Y,GYRO_Z,BATT,GSR_RAW,GSR_CAL',
+          ...data.map(row => row.join(','))
+      ].join('\r\n');
 
-    console.log("CSV FILE");
-    console.log(csv);
+      console.log("CSV FILE");
+      console.log(csv);
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `shimmer_${Date.now()}.csv`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `shimmer_${Date.now()}.csv`;
 
-    document.body.appendChild(a);
-    a.click();
+      document.body.appendChild(a);
+      a.click();
 
-    setTimeout(() => {
-        URL.revokeObjectURL(url);
-        a.remove();
-    }, 1000);
-});
+      setTimeout(() => {
+          URL.revokeObjectURL(url);
+          a.remove();
+      }, 1000);
+  });
+
 </script>
 
 </body>
