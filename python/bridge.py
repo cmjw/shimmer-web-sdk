@@ -3,6 +3,8 @@ import asyncio
 import json
 import websockets
 
+PORT = 8765
+
 clients = set()
 
 async def handler(websocket):
@@ -25,8 +27,8 @@ async def handler(websocket):
         clients.remove(websocket)
 
 async def main():
-    async with websockets.serve(handler, "localhost", 8765):
-        print("Listening on localhost:8765")
+    async with websockets.serve(handler, "localhost", PORT):
+        print(f"Listening on localhost:{PORT}")
         await asyncio.Future()
 
 asyncio.run(main())
